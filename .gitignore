@@ -30,7 +30,7 @@ build/
 .env.local
 
 # dbt / Airflow
- dbt/target/
+dbt/target/
 dbt/dbt_packages/
 logs/
 .airflow/
