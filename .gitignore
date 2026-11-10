@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Local data and generated outputs
+data/raw/
+data/processed/
+data/generated/
+*.csv
+*.parquet
+*.geojson
+*.gpkg
+outputs/
+artifacts/
+
+# Frontend
+node_modules/
+dist/
+build/
+.env.local
+
+# dbt / Airflow
+ dbt/target/
+dbt/dbt_packages/
+logs/
+.airflow/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
