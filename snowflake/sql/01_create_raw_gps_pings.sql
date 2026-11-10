@@ -1,0 +1,23 @@
+-- GeoPulse Week 1 / Day 1
+-- Run after selecting the intended development database and schema.
+
+CREATE TABLE IF NOT EXISTS RAW_GPS_PINGS (
+    DEVICE_ID       VARCHAR(32) NOT NULL,
+    LATITUDE        FLOAT NOT NULL,
+    LONGITUDE       FLOAT NOT NULL,
+    EVENT_TIMESTAMP TIMESTAMP_TZ NOT NULL,
+    EVENT_GEOGRAPHY GEOGRAPHY,
+    INGESTED_AT     TIMESTAMP_TZ DEFAULT CURRENT_TIMESTAMP()
+);
+
+-- During loading, derive the point using:
+-- ST_MAKEPOINT(LONGITUDE, LATITUDE)
+-- Snowflake expects X (longitude) first and Y (latitude) second.
+
+-- Basic checks after loading:
+-- SELECT COUNT(*) FROM RAW_GPS_PINGS;
+-- SELECT COUNT_IF(LATITUDE NOT BETWEEN -90 AND 90
+--              OR LONGITUDE NOT BETWEEN -180 AND 180) AS INVALID_COORDINATES
+-- FROM RAW_GPS_PINGS;
+-- SELECT COUNT_IF(EVENT_TIMESTAMP IS NULL) AS MISSING_TIMESTAMPS
+-- FROM RAW_GPS_PINGS;
