@@ -1,0 +1,10 @@
+# Core Python dependencies for the initial scaffold.
+# Pin versions after validating the team's Python and Java/Spark environment.
+pandas>=2.2,<3.0
+numpy>=1.26,<3.0
+python-dotenv>=1.0,<2.0
+snowflake-connector-python>=3.12,<5.0
+snowflake-snowpark-python>=1.20,<2.0
+pyspark>=3.5,<5.0
+apache-sedona>=1.7,<2.0
+pytest>=8.0,<10.0
