@@ -12,6 +12,19 @@ from src.data_generation.generate_gps_pings import (
 )
 
 
+def create_valid_gps_data():
+    """Create a small valid GPS dataset for validation tests."""
+    return pd.DataFrame({
+        "device_id": ["DEV000001", "DEV000002"],
+        "latitude": [13.0, 12.95],
+        "longitude": [77.0, 77.05],
+        "event_timestamp": pd.to_datetime(
+            ["2026-01-01 10:00:00", "2026-01-01 11:00:00"],
+            utc=True,
+        ),
+    })
+
+
 def test_default_record_count():
     data = generate_gps_pings()
 
@@ -177,3 +190,48 @@ def test_save_gps_pings_creates_csv(tmp_path):
 
     assert len(loaded) == 6
     assert list(loaded.columns) == list(data.columns)
+
+
+# Day 2: Additional data-quality validation tests
+
+def test_blank_device_id_is_rejected():
+    data = create_valid_gps_data()
+    data.loc[0, "device_id"] = "   "
+
+    with pytest.raises(ValueError, match="Device IDs"):
+        validate_gps_data(data)
+
+
+def test_duplicate_device_timestamp_is_rejected():
+    data = create_valid_gps_data()
+    data.loc[1, "device_id"] = data.loc[0, "device_id"]
+    data.loc[1, "event_timestamp"] = data.loc[0, "event_timestamp"]
+
+    with pytest.raises(ValueError, match="Duplicate"):
+        validate_gps_data(data)
+
+
+def test_timezone_naive_timestamp_is_rejected():
+    data = create_valid_gps_data()
+    data["event_timestamp"] = (
+        data["event_timestamp"].dt.tz_localize(None)
+    )
+
+    with pytest.raises(ValueError, match="timezone-aware"):
+        validate_gps_data(data)
+
+
+def test_non_numeric_coordinates_are_rejected():
+    data = create_valid_gps_data()
+    data["latitude"] = ["invalid", 12.95]
+
+    with pytest.raises(ValueError, match="numeric"):
+        validate_gps_data(data)
+
+
+def test_infinite_coordinates_are_rejected():
+    data = create_valid_gps_data()
+    data.loc[0, "longitude"] = float("inf")
+
+    with pytest.raises(ValueError, match="finite"):
+        validate_gps_data(data)

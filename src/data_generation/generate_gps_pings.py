@@ -2,7 +2,7 @@
 """Generate reproducible synthetic GPS pings for GeoPulse."""
 
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -16,9 +16,7 @@ DEFAULT_CITY_BOUNDS = {
 }
 
 
-def validate_bounds(
-    bounds: dict,
-) -> None:
+def validate_bounds(bounds: dict) -> None:
     """Validate geographic bounding-box configuration."""
     required = {
         "latitude_min",
@@ -44,7 +42,7 @@ def validate_bounds(
 
 
 def validate_gps_data(data: pd.DataFrame) -> None:
-    """Validate generated GPS records."""
+    """Validate GPS records and enforce data-quality rules."""
     required_columns = {
         "device_id",
         "latitude",
@@ -62,16 +60,42 @@ def validate_gps_data(data: pd.DataFrame) -> None:
     if data[list(required_columns)].isnull().any().any():
         raise ValueError("GPS data contains missing required values.")
 
+    # Device IDs must contain meaningful text.
+    if not data["device_id"].map(
+        lambda value: isinstance(value, str) and bool(value.strip())
+    ).all():
+        raise ValueError("Device IDs must be non-empty strings.")
+
+    # Coordinates must be numeric.
+    for column in ["latitude", "longitude"]:
+        if not pd.api.types.is_numeric_dtype(data[column]):
+            raise ValueError(f"{column} must contain numeric values.")
+
+        if not np.isfinite(data[column].to_numpy(dtype=float)).all():
+            raise ValueError(f"{column} must contain finite values.")
+
     if not data["latitude"].between(-90, 90).all():
         raise ValueError("Latitude must be between -90 and 90.")
 
     if not data["longitude"].between(-180, 180).all():
         raise ValueError("Longitude must be between -180 and 180.")
 
+    # Timestamps must be datetime values with a timezone.
     if not pd.api.types.is_datetime64_any_dtype(
         data["event_timestamp"]
     ):
         raise ValueError("Timestamps must use a datetime data type.")
+
+    if data["event_timestamp"].dt.tz is None:
+        raise ValueError("Timestamps must be timezone-aware.")
+
+    # One device cannot have multiple records at the same timestamp.
+    if data.duplicated(
+        subset=["device_id", "event_timestamp"]
+    ).any():
+        raise ValueError(
+            "Duplicate device ID and timestamp combinations are not allowed."
+        )
 
 
 def generate_gps_pings(
